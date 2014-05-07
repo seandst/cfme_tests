@@ -1,6 +1,7 @@
-from multiprocessing.pool import CLOSE, Pool
+from multiprocessing.pool import Pool, ThreadPool
 
-class ResultsPool(Pool):
+
+class _ResultsPoolMixin(object):
     """multiprocessing.Pool boilerplate wrapper
 
 - Stores results on a results property
@@ -8,15 +9,16 @@ class ResultsPool(Pool):
 
 """
     def __init__(self, *args, **kwargs):
-        super(ResultsPool, self).__init__(*args, **kwargs)
+        super(_ResultsPoolMixin, self).__init__(*args, **kwargs)
+        self.results = list()
 
     def apply_async(self, *args, **kwargs):
-        result = super(ResultsPool, self).apply_async(*args, **kwargs)
+        result = super(_ResultsPoolMixin, self).apply_async(*args, **kwargs)
         self.results.append(result)
         return result
 
     def map_async(self, *args, **kwargs):
-        result = super(ResultsPool, self).map_async(*args, **kwargs)
+        result = super(_ResultsPoolMixin, self).map_async(*args, **kwargs)
         self.results.append(result)
         return result
 
@@ -27,10 +29,17 @@ class ResultsPool(Pool):
         else:
             return None
 
-    def __enter__(self):
-        self.results = list()
-        return self
+    def __enter__(self, *args, **kwargs):
+        return type(self)(*args, **kwargs)
 
     def __exit__(self, *args, **kwargs):
         self.close()
         self.join()
+
+
+class ResultsPool(_ResultsPoolMixin, Pool):
+    pass
+
+
+class ResultsThreadPool(_ResultsPoolMixin, ThreadPool):
+    pass
