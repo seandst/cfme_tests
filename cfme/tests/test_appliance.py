@@ -70,12 +70,9 @@ def test_chkconfig_on(ssh_client, service):
 
 
 @pytest.mark.ignore_stream("upstream")
-@pytest.mark.parametrize(('rule'), [
-    'ACCEPT     tcp  --  anywhere             anywhere            state NEW tcp dpt:ssh',
-    'ACCEPT     tcp  --  anywhere             anywhere            state NEW tcp dpt:http',
-    'ACCEPT     tcp  --  anywhere             anywhere            state NEW tcp dpt:https'
-])
-def test_iptables_rules(ssh_client, rule):
+@pytest.mark.parametrize('dpt', ['dpt:ssh', 'dpt:http', 'dpt:https'])
+def test_iptables_rules(ssh_client, dpt):
+    rule = 'ACCEPT     tcp  --  anywhere             anywhere            state NEW tcp %s' % dpt
     """Verifies key iptable rules are in place"""
     stdout = ssh_client.run_command('iptables -L')[1]
     assert rule in stdout
