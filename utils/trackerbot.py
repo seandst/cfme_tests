@@ -83,6 +83,9 @@ def parse_template(template_name):
     for stream, regex in stream_matchers:
         matches = re.match(regex, template_name)
         if matches:
+            # template matched a stream, filter out db variants
+            if template_name.lower().endswith('db'):
+                break
             groups = matches.groupdict()
             # hilarity may ensue if this code is run right before the new year
             today = date.today()
