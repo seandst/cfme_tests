@@ -1,0 +1,5 @@
+breakpoints:
+  - summary: Catch 'Unable to find template' errors on provisioning nav
+    line_hashes:
+       cfme/provisioning.py:
+         190: c3b28d73
