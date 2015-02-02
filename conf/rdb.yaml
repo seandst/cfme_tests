@@ -1,5 +1,6 @@
 breakpoints:
-  - summary: Catch 'Unable to find template' errors on provisioning nav
-    line_hashes:
-       cfme/provisioning.py:
-         190: c3b28d73
+  - summary: Unable to find template on provisioning nav
+  - exceptions:
+    - cfme.exceptions.Exception
+  - recipients:
+    - semyers@redhat.com
