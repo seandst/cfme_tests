@@ -1,6 +1,6 @@
 breakpoints:
-  - summary: Unable to find template on provisioning nav
-  - exceptions:
-    - cfme.exceptions.Exception
-  - recipients:
-    - semyers@redhat.com
+  - subject: Unable to find template on provisioning nav
+    exceptions:
+      - cfme.exceptions.TemplateNotFound
+    recipients:
+      - semyers@redhat.com
