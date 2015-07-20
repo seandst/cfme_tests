@@ -32,7 +32,7 @@ def current_stream():
     return get_stream(store.current_appliance.version)
 
 
-def get_version(obj=None):
+def get_version(obj):
     """
     Return a Version based on obj.  For CFME, 'master' version
     means always the latest (compares as greater than any other version)
@@ -42,8 +42,6 @@ def get_version(obj=None):
     """
     if isinstance(obj, Version):
         return obj
-    if obj.startswith('master'):
-        return Version.latest()
     return Version(obj)
 
 
@@ -129,7 +127,7 @@ def appliance_has_netapp():
         return None
 
 
-def product_version_dispatch(*_args, **_kwargs):
+def product_version_dispatch(*args, **kwargs):
     """Dispatch function for use in multimethods that just ignores
        arguments and dispatches on the current product version."""
     return current_version()
@@ -158,13 +156,17 @@ def pick(v_dict):
 class Version(object):
     """Version class based on distutil.version.LooseVersion"""
     component_re = re.compile(r'(\d+ | [a-z]+ | \.)', re.VERBOSE)
+    _upstream_vstrings = ('master', 'upstream', 'latest')
 
-    def __init__(self, vstring):
-        self.parse(vstring)
+    def __init__(self, version):
+        # version can be a string version or Version instance
+        if isinstance(version, Version):
+            version = version.vstring
+        self.parse(version)
 
     def parse(self, vstring):
         if vstring is None:
-            raise ValueError('Version string cannot be None')
+            raise ValueError('Version cannot be None')
         elif isinstance(vstring, (list, tuple)):
             vstring = ".".join(map(str, vstring))
         elif vstring:
@@ -193,7 +195,7 @@ class Version(object):
         return self.vstring
 
     def __repr__(self):
-        return "Version ('%s')" % str(self)
+        return "Version('%s')" % self.vstring
 
     def __cmp__(self, other):
         try:
@@ -203,16 +205,20 @@ class Version(object):
 
         if self == other:
             return 0
-        elif self == self.latest() or other == self.lowest():
+        elif self._is_upstream() or other == self.lowest():
             return 1
-        elif self == self.lowest() or other == self.latest():
+        elif self == self.lowest() or other._is_upstream():
             return -1
         else:
             return cmp(self.version, other.version)
 
     def __eq__(self, other):
         try:
-            return self.version == Version(other).version
+            other = Version(other)
+            if self._is_upstream() and other._is_upstream():
+                return True
+            else:
+                return self.vstring == Version(other).vstring
         except:
             return False
 
@@ -242,13 +248,16 @@ class Version(object):
         """
 
         if not isinstance(series, Version):
-            series = get_version(series)
-        if self in (self.lowest(), self.latest()):
-            if series == self:
-                return True
-            else:
-                return False
-        return series.version == self.version[:len(series.version)]
+            series = Version(series)
+        if self._is_upstream() and self._is_upstream(series.vstring):
+            return True
+        return self.vstring.startswith(series.vstring)
+
+    def _is_upstream(self, vstring=None):
+        # If a vstring is passed, True if it's upstream. If not, True if this instance is upstream
+        if vstring is None:
+            vstring = self.vstring
+        return vstring in self._upstream_vstrings
 
     def series(self, n=2):
         return ".".join(self.vstring.split(".")[:n])
